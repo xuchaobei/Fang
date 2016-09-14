@@ -4,7 +4,8 @@ var path = require("path");
 
 config.cache = true;
 config.debug = true;
-config.devtool = "cheap-module-eval-source-map";
+//config.devtool = "cheap-module-eval-source-map";
+config.devtool = "eval";
 
 config.entry.unshift(
 	"webpack-hot-middleware/client"

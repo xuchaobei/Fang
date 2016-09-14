@@ -17,6 +17,7 @@
   "scripts": {
     "start": "npm run build && NODE_ENV=production babel-node ./backend/server.js",
     "dev": "NODE_ENV=development babel-node ./backend/server.js",
+    "debug": "NODE_ENV=development babel-node-debug -p 8081 ./backend/server.js",
     "build-client": "webpack --colors --display-error-details --config configs/webpack.client.js",
     "build": "npm run build-client && cp -f frontend/index.html static/",
     "watch-client": "webpack-dev-server --config configs/webpack.client-watch.js"
@@ -25,6 +26,7 @@
     "koa": "^1.2.2",
     "koa-proxy": "^0.6.0",
     "koa-static": "^2.0.0",
+    "koa-router": "^5.4.0",
     "react": "^15.3.1",
     "react-dom": "^15.3.1",
     "react-router": "^2.7.0",

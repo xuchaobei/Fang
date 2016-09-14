@@ -14,10 +14,29 @@ require("./sidebar.less")
 
 export default class SideBar extends Component {
 
+
 	render() {
+		const zones = this.props.data;
+		console.log(zones);
 		return (
 			<div className="sidebar">
-				<label>小区：</label>
+				<table>
+					<thead>
+						<tr>
+							<td>小区名称</td>
+						</tr>
+					</thead>
+					<tbody>
+					{
+						zones.map(zone => {
+							return (<tr key={zone._id}>
+										<td>{zone.name}</td>
+									</tr>)
+						})
+					}
+					
+					</tbody>
+				</table>
 			</div>
 		);
 	}

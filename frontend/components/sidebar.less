@@ -1,7 +1,26 @@
 .sidebar {
 	float: left;
-	position: relative;
-	width: 200px;
+	position: absolute;
+	top: 80px;
+	width: 250px;
 	text-align: center;
+	table {
+		margin: 0 auto;
+		width: 90%;
+		border : solid #ddd 1px;
+		border-spacing: 0px;
+		line-height: 1.5em;
+		tr:nth-of-type(even){
+			background-color: #f9f9f9;
+		}
+		thead {
+			line-height: 2em;
+			background-color: #f9f9f9;
+			font-weight: bold;
+			td {
+				border: solid #ddd;
+				border-width: 0px 0px 1px 0px; 
+			}
+		}
+	}
 }
-

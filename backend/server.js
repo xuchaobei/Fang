@@ -4,6 +4,9 @@ import webpackMiddleware from 'koa-webpack-dev-middleware';
 import webpackHotMiddleware from 'koa-webpack-hot-middleware';
 import webpack from 'webpack';
 import path from 'path';
+import koaRouter from 'koa-router';
+import fs from 'fs';
+
 
 function startWebServer(port) {
 
@@ -26,6 +29,20 @@ function startWebServer(port) {
     app.use(serve(path.join(__dirname, '../static')));
   }
 
+  const router = koaRouter();
+
+  router.all('/mockdata/:service', function *(next) {
+    const filePath = "mockdata/" + this.params.service + '.json';
+    try {
+      this.body = fs.readFileSync(path.join(__dirname, '../' + filePath));
+      this.type = 'application/json'
+    } catch (e) {
+      console.error(e);
+      this.status = 404;
+    }
+  });
+
+  app.use(router.routes());
 
   app.on('error', (err) => {
     console.log('error', err);
@@ -34,5 +51,6 @@ function startWebServer(port) {
   app.listen(port);
 
 }
+
 
 startWebServer(8080);
