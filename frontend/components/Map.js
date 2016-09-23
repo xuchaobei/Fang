@@ -2,13 +2,7 @@ import React, {
 	Component,
 	PropTypes
 } from 'react';
-import {
-	render
-} from 'react-dom';
-
-import {
-	Link
-} from 'react-router';
+import Chart from 'chart.js';
 
 require("./map.less")
 
@@ -21,47 +15,31 @@ export default class Map extends Component {
 		super(props);
 		this.id = props.id || 'allmap';
 		this._allOverlays = [];
+		this.getNewMap = this.getNewMap.bind(this);
 		this.onRefreshZones = props.onRefreshZones;
+		this.onClickZone = props.onClickZone;
+		this._district = props.data;
+		this._center = null;
+		this._zoomLevel = 0;
 	}
 
 	componentDidMount() {
 		this._map = new BMap.Map(this.id);
 		this._map.centerAndZoom('上海');
 		this._map.addControl(new BMap.NavigationControl());
-		var that = this;
+		const that = this;
 
+		//moveend，初次加载时，会响应多次，原因待查？
+		this._map.addEventListener("moveend", that.getNewMap); 
+		this._map.addEventListener("zoomend", that.getNewMap);
 
-		this._map.addEventListener("dragend", function() {
-			var center = this.getCenter();
-			console.log("地图中心点变更为：" + center.lng + ", " + center.lat);
+	}
 
-
-			var bs = this.getBounds(); //获取可视区域
-			var sw = bs.getSouthWest(); //可视区域左下角
-			var ne = bs.getNorthEast(); //可视区域右上角
-			var level = this.getZoom();
-
-			console.log("ne", ne.lng, ne.lat);
-			console.log("sw", sw.lng, sw.lat);
-			console.log("dragend");
-			//removeLabels(ne, sw);
-			that.getNewMap(ne, sw, level);
-
-			// getMapZones(ne,sw);
-		});
-
-		this._map.addEventListener("zoomend", function() { //放大缩小地图
-			var level = this.getZoom();
-			// alert("地图缩放至：" + level + "级");  
-			var bs = this.getBounds(); //获取可视区域
-			var sw = bs.getSouthWest(); //可视区域左下角
-			var ne = bs.getNorthEast(); //可视区域右上角  
-
-			// getMapZones(ne, sw);
-			console.log("level=" + level);
-			that.getNewMap(ne, sw, level);
-		})
-
+	componentDidUpdate() {
+		if(this.props.data && this._district != this.props.data){
+			this._district = this.props.data;
+			this._map.centerAndZoom(this._district, 17);
+		}
 	}
 
 	render() {
@@ -72,11 +50,28 @@ export default class Map extends Component {
 	}
 
 
+	getNewMap() {
+		const level = this._map.getZoom();
+		const center = this._map.getCenter();
 
-	getNewMap(ne, sw, level) {
+		/*
+		* 根据地图中心点和缩放级别判断是否需要重新请求数据，解决百度api moveend 事件多次执行问题	
+		*/
+		if(level === this._level && center === this._center){
+			return;
+		}else {
+			this._level = level;
+			this._center = center;
+		}
+
+		const bs = this._map.getBounds(); //获取可视区域
+		const sw = bs.getSouthWest(); //可视区域左下角
+		const ne = bs.getNorthEast(); //可视区域右上角  
+
 		if (level < 16) {
 			this.removeLabels();
 			this.makeDistrictLabel(hotdistrict);
+			this.onRefreshZones([]);   //清空左边栏数据
 		} else if (level > 15) {
 			this.removeLabels();
 			this.getVisibleZones(ne, sw);
@@ -85,201 +80,53 @@ export default class Map extends Component {
 
 	//获取当前可见范围的所有小区
 	getVisibleZones(ne, sw) {
-		var xy = JSON.stringify({
-			"leftX": ne.lat,
-			"leftY": ne.lng,
-			"rightX": sw.lat,
-			"rightY": sw.lng
-		});
-		var that = this;
+		const that = this;
 		$.ajax({
-			url: 'mockdata/getVisibleZones',
+			//url: 'mockdata/getVisibleZones',
+			url: 'getVisibleZones',
 			type: "GET",
-			data: xy,
+			data: { swx : sw.lat, swy : sw.lng, nex : ne.lat, ney : ne.lng},
 			contentType: "application/json; charset=utf-8",
 			dataType: "json",
 			success: function(data) {
-				//生成地图标注
-				console.log(data)
-					//console.log('data........',data);	
 				that.makeLabel(data.zones);
 
-				//go on.........willion  create list on index.html
-
-				// sort by priceRate
+				// 倒序
 				data.zones.sort(function(a, b) {
 					return b.priceRate - a.priceRate;
-				}); // 排序, 倒序
-
+				}); 
 				that.onRefreshZones(data.zones);
-
-				//在移动地图时，移除先前产生的table
-				//$('tr').not('#first').remove();
-				// 	生成table
-				/*for (var x = 0; x < data.zones.length; x++) {
-					var td1 = data.zones[x].name;
-					var _item = $("<tr></tr>").html(td1).click(function() {
-						var num = ($(this).index() - 1)
-							//console.log(num)
-						var graph_data = data.zones[num];
-						//console.log(data.zones[num])
-						//console.log(graph_data)
-						pop_chart(graph_data._id, graph_data.name);
-					});
-
-					$('#data').append(_item);
-				}*/
 			}
 		})
 	}
 
-
-
-	//点击tr弹出曲线图
-	pop_chart(zoneId, content) {
-		// console.logf(content);
-
-
-		$.ajax({
-			url: 'getPrices',
-			type: "POST",
-			data: JSON.stringify({
-				"id": zoneId,
-				"name": content
-			}),
-			contentType: "application/json; charset=utf-8",
-			dataType: "json",
-			success: function(result) {
-				//生成地图标注
-				//						var data =  eval ("(" + data + ")");
-				labels = [];
-				data = [];
-
-				var tempDateTime = "";
-				result.zoneprices.forEach(function(price) {
-
-					// var date = new Date(Number(price.time));
-
-					// var dateTime = date.getFullYear()+"/"+date.getMonth();
-
-					// if(dateTime != tempDateTime){
-					// 	labels.push(dateTime);
-					//     data.push(price.price);
-					//     tempDateTime = dateTime;
-					// }
-					// console.log(price.time, price.price);
-					labels.push(price.time);
-					data.push(price.price);
-
-
-				})
-
-				$('#myModal').modal();
-
-				var ctx = $("#myChart");
-
-				var modalData = {
-					labels: labels,
-					datasets: [{
-						label: "房价曲线",
-						fill: false,
-						lineTension: 0.1,
-						backgroundColor: "rgba(75,192,192,0.4)",
-						borderColor: "rgba(75,192,192,1)",
-						borderCapStyle: 'butt',
-						borderDash: [],
-						borderDashOffset: 0.0,
-						borderJoinStyle: 'miter',
-						pointBorderColor: "rgba(75,192,192,1)",
-						pointBackgroundColor: "#fff",
-						pointBorderWidth: 1,
-						pointHoverRadius: 5,
-						pointHoverBackgroundColor: "rgba(75,192,192,1)",
-						pointHoverBorderColor: "rgba(220,220,220,1)",
-						pointHoverBorderWidth: 2,
-						pointRadius: 1,
-						pointHitRadius: 10,
-						data: data,
-						spanGaps: false,
-						scaleOverride: true
-					}]
-				}
-
-
-				new Chart(ctx, {
-					type: 'line',
-					data: modalData,
-					options: {
-						responsive: true
-					}
-				});
-
-				$("#myModalLabel").html(result.name);
-			}
-		})
-	}
 
 	makeLabel(zones) {
-		var size = zones.length;
-		for (var i = 0; i < size; i++) {
-			let p = i;
-			var point = new BMap.Point(zones[p].y, zones[p].x);
-			var ratioYear = zones[p].xqdata.ratio_year;
-			var mouseoverText = zones[p].name + " " + ratioYear + "%";
-			var fontColor = "";
-			if (ratioYear >= 50) {
+		const size = zones.length;
+		for (let i = 0; i < size; i++) {
+			const point = new BMap.Point(zones[i].y, zones[i].x);
+			const ratioYear = zones[i].xqdata.ratio_year;
+			const mouseoverText = zones[i].name + " " + ratioYear + "%";
+			let fontColor = "";
+			if (ratioYear >= 20) {
 				fontColor = "red";
-			} else if (ratioYear < 50 && ratioYear >= 20) {
+			} else if (ratioYear < 20 && ratioYear >= 10) {
 				fontColor = "blue";
-			} else if (ratioYear < 20 && ratioYear >= 0) {
+			} else if (ratioYear < 10 && ratioYear >= 0) {
 				fontColor = "green";
 			} else {
 				fontColor = "black";
 			}
-			// var percent = zones[x]*100 + "%"
-
-			//complexXQLabel(point, zones[p].name, mouseoverText, fontColor, zones[p]);
-			var myCompOverlay = new ComplexZoneOverlay(point, zones[p].name, mouseoverText, fontColor, zones[p]);
+			const myCompOverlay = new ComplexZoneOverlay(point, zones[i].name, mouseoverText, fontColor, zones[i], this.onClickZone);
 			this._map.addOverlay(myCompOverlay);
 			this._allOverlays.push(myCompOverlay);
 		}
 
-		/*var x = 0;
-		async.whilst(
-			function() {
-				return x < zones.length;
-			},
-			function(xqcallback) {
-				// console.log(zones[x]._id)
-
-				var point = new BMap.Point(zones[x].y, zones[x].x);
-				var ratioYear = zones[x].xqdata.ratio_year;
-				var mouseoverText = zones[x].name + " " + ratioYear + "%";
-				var fontColor = "";
-				if (ratioYear >= 50) {
-					fontColor = "red";
-				} else if (ratioYear < 50 && ratioYear >= 20) {
-					fontColor = "blue";
-				} else if (ratioYear < 20 && ratioYear >= 0) {
-					fontColor = "green";
-				} else {
-					fontColor = "black";
-				}
-				// var percent = zones[x]*100 + "%"
-
-				complexXQLabel(point, zones[x].name, mouseoverText, fontColor, zones[x]);
-				x++;
-				xqcallback();
-			},
-			function(err) {
-
-			}
-		)*/
 	}
 
 	//清除标注
 	removeLabels() {
-		var that = this;
+		const that = this;
 		this._allOverlays.forEach(function(label) {
 			that._map.removeOverlay(label);
 		})
@@ -288,63 +135,40 @@ export default class Map extends Component {
 
 	//划区
 	makeDistrictLabel(list) {
-		var myGeo = new BMap.Geocoder();
-		var size = list.length;
-		var that = this;
-		for (var i = 0; i < size; i++) {
-			let p = i;
-			myGeo.getPoint(list[p], function(point) {
-				var txt = list[p];
-				var count = num[p];
+		const myGeo = new BMap.Geocoder();
+		const size = list.length;
+		const that = this;
+		for (let i = 0; i < size; i++) {
+			myGeo.getPoint(list[i], function(point) {
+				var txt = list[i];
+				var count = num[i];
 				var mouseoverTxt = txt + " " + count + "套";
-				var myCompOverlay = new ComplexCustomOverlay(point, txt, mouseoverTxt, that._map);
+				var myCompOverlay = new ComplexDistrictOverlay(point, txt, mouseoverTxt);
 				that._map.addOverlay(myCompOverlay);
 				that._allOverlays.push(myCompOverlay);
 
 			}, "上海市");
 		}
-
-
-
-		/*var myGeo = new BMap.Geocoder();
-		var x = 0;
-
-		async.whilst(
-			function() {
-				return x < list.length;
-			},
-			function(callback) {
-				//在行政区上做标记
-				myGeo.getPoint(list[x], function(point) {
-					var txt = list[x];
-					var count = num[x]
-					var mouseoverTxt = txt + " " + count + "套";
-
-					Complexlabel(point, list[x], mouseoverTxt)
-					x++;
-					callback();
-
-				}, "上海市");
-			},
-			function(err) {}
-		)*/
-
 	}
 
 }
 
-class ComplexCustomOverlay extends BMap.Overlay {
-	constructor(point, text, mouseoverText, map) {
+Map.PropTypes = {
+	onRefreshZones : React.PropTypes.func.isRequired,
+	onClickZone : React.PropTypes.func.isRequired,
+	district : React.PropTypes.string
+}
+
+class ComplexDistrictOverlay extends BMap.Overlay {
+	constructor(point, text, mouseoverText) {
 		super()
 		this._point = point;
 		this._text = text;
 		this._overText = mouseoverText;
-		this._oldMap = map;
 	}
 
 	initialize(map) {
 		this._map = map;
-		console.log(this._oldMap === this._map);
 		var div = this._div = document.createElement("div");
 		div.style = "border-radius:50px; width:80px; height:80px; border:3px solid #BC3B3A;";
 		div.style.position = "absolute";
@@ -366,9 +190,6 @@ class ComplexCustomOverlay extends BMap.Overlay {
 			this.style.backgroundColor = "#6BADCA";
 			this.style.borderColor = "#0000ff";
 			this.getElementsByTagName("span")[0].innerHTML = that._overText;
-			console.log("mouseouver =");
-			console.log(that._oldMap === that._map);
-
 
 		}
 
@@ -378,6 +199,7 @@ class ComplexCustomOverlay extends BMap.Overlay {
 			this.style.borderColor = "#BC3B3A";
 			this.getElementsByTagName("span")[0].innerHTML = that._text;
 		}
+
 		div.addEventListener("click", function() {
 			that.hide();
 			map.centerAndZoom(that._point, 17);
@@ -400,13 +222,14 @@ class ComplexCustomOverlay extends BMap.Overlay {
 }
 
 class ComplexZoneOverlay extends BMap.Overlay {
-	constructor(point, text, mouseoverText, fontColor, zone) {
+	constructor(point, text, mouseoverText, fontColor, zone, onClickZone) {
 		super()
 		this._point = point;
 		this._text = text;
 		this._overText = mouseoverText;
 		this._fontColor = fontColor;
 		this._zone = zone;
+		this._onClickZone = onClickZone;
 	}
 
 	initialize(map) {
@@ -429,20 +252,19 @@ class ComplexZoneOverlay extends BMap.Overlay {
 		var that = this;
 
 		div.onmouseover = function() {
-
 			this.style.backgroundColor = "#FFFFFF";
 			this.style.borderColor = "#0000ff";
 			this.getElementsByTagName("span")[0].innerHTML = that._overText;
 		}
 
 		div.onmouseout = function() {
-
 			this.style.backgroundColor = "#FFFFFFF";
-			this.style.borderColor = "#0000ff";
+			this.style.borderColor = "#666";
 			this.getElementsByTagName("span")[0].innerHTML = that._text;
 		}
-		div.addEventListener("click", function() {
 
+		div.addEventListener("click", function() {
+			that._onClickZone(that._zone);
 		})
 
 		map.getPanes().labelPane.appendChild(div);

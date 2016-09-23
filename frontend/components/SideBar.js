@@ -2,22 +2,19 @@ import React, {
 	Component,
 	PropTypes
 } from 'react';
-import {
-	render
-} from 'react-dom';
-
-import {
-	Link
-} from 'react-router';
 
 require("./sidebar.less")
 
 export default class SideBar extends Component {
 
+	constructor(props) {
+		super(props);
+		this.onClickZone = this.props.onClickZone.bind(this);
+	}
+
 
 	render() {
 		const zones = this.props.data;
-		console.log(zones);
 		return (
 			<div className="sidebar">
 				<table>
@@ -29,16 +26,19 @@ export default class SideBar extends Component {
 					<tbody>
 					{
 						zones.map(zone => {
-							return (<tr key={zone._id}>
+							return (<tr key={zone._id} onClick={() => this.onClickZone(zone)}>
 										<td>{zone.name}</td>
 									</tr>)
 						})
 					}
-					
 					</tbody>
 				</table>
 			</div>
 		);
 	}
+}
 
+SideBar.PropTypes={
+	zones : React.PropTypes.array.isRequired,
+	onClickZone : React.PropTypes.func.isRequired
 }

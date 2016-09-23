@@ -2,8 +2,10 @@
 	float: left;
 	position: absolute;
 	top: 80px;
-	width: 250px;
+	bottom: 0px;
+	width: 300px;
 	text-align: center;
+	overflow-y: scroll;
 	table {
 		margin: 0 auto;
 		width: 90%;
@@ -20,6 +22,11 @@
 			td {
 				border: solid #ddd;
 				border-width: 0px 0px 1px 0px; 
+			}
+		}
+		tbody {
+			tr:hover{
+				cursor: pointer;
 			}
 		}
 	}

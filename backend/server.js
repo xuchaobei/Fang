@@ -6,7 +6,8 @@ import webpack from 'webpack';
 import path from 'path';
 import koaRouter from 'koa-router';
 import fs from 'fs';
-
+import api from './api';
+import mongoose from 'mongoose';
 
 function startWebServer(port) {
 
@@ -43,6 +44,7 @@ function startWebServer(port) {
   });
 
   app.use(router.routes());
+  app.use(api.routes());
 
   app.on('error', (err) => {
     console.log('error', err);
@@ -52,5 +54,5 @@ function startWebServer(port) {
 
 }
 
-
+mongoose.connect('mongodb://localhost:27017/map');
 startWebServer(8080);

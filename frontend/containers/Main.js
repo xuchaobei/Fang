@@ -12,32 +12,58 @@ import {
 import Header from "../components/Header.js"
 import SideBar from "../components/SideBar.js"
 import Map from "../components/Map.js"
+import PopChart from "../components/PopChart"
 
 export default class Main extends Component {
 
 	constructor(props) {
 		super(props);
 		this.state = {
-			zones : [{'_id':1, 'name':"白杨小区"},{'_id':2, 'name':'花木小区'}]
+			zones: [],
+			district: "",
+			currentZone: null,
+			chartVisibility: false
 		}
+		this.onRefreshZones = this.onRefreshZones.bind(this);
+		this.onClickZone = this.onClickZone.bind(this);
+		this.setChartDisplay = this.setChartDisplay.bind(this);
+		this.selectDistrict = this.selectDistrict.bind(this);
 	}
 
 	render() {
 		return (
 			<div>
-				<Header/>
-				<SideBar data={this.state.zones}/>
-				<Map onRefreshZones = {this.onRefreshZones.bind(this)}/>
+				<Header onSearchDistrict = {this.selectDistrict}/>
+				<SideBar data= {this.state.zones} onClickZone = {this.onClickZone}/>
+				<Map data= {this.state.district} onRefreshZones = {this.onRefreshZones} onClickZone = {this.onClickZone}/>
+				<PopChart data = {this.state.currentZone} visibility={this.state.chartVisibility} setChartDisplay={this.setChartDisplay}/>
 			</div>
 		);
 	}
 
 	onRefreshZones(zones) {
-		this.setState({zones: zones});
+		this.setState({
+			zones: zones,
+		});
 	}
 
-}
+	onClickZone(zone) {
+		this.setState({
+			currentZone: zone,
+			chartVisibility: true
+		});
+	}
 
-Main.propTypes = {
-	zones : React.PropTypes.array
+	setChartDisplay(visibility) {
+		this.setState({
+			chartVisibility: visibility 
+		})
+	}
+
+	selectDistrict(district) {
+		this.setState({
+			district: district
+		})
+	}
+
 }
