@@ -14,4 +14,4 @@ const ZoneSchema = new Schema({
 	xqdata: Schema.Types.Mixed,
 })
 
-export default mongoose.model('LJ_Zone', ZoneSchema);
+export default mongoose.model('Zone', ZoneSchema);
