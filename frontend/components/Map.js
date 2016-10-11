@@ -85,7 +85,7 @@ export default class Map extends Component {
 			//url: 'mockdata/getVisibleZones',
 			url: 'getVisibleZones',
 			type: "GET",
-			data: { swx : sw.lat, swy : sw.lng, nex : ne.lat, ney : ne.lng},
+			data: { swx : sw.lng, swy : sw.lat, nex : ne.lng, ney : ne.lat},
 			contentType: "application/json; charset=utf-8",
 			dataType: "json",
 			success: function(data) {
@@ -104,7 +104,7 @@ export default class Map extends Component {
 	makeLabel(zones) {
 		const size = zones.length;
 		for (let i = 0; i < size; i++) {
-			const point = new BMap.Point(zones[i].y, zones[i].x);
+			const point = new BMap.Point(zones[i].x, zones[i].y);
 			const ratioYear = zones[i].xqdata.ratio_year;
 			const mouseoverText = zones[i].name + " " + ratioYear + "%";
 			let fontColor = "";

@@ -1,80 +1,60 @@
 import Zone from '../schemas/ZoneSchema';
 import request from 'koa-request';
+import co from 'co';
 
-/*var sh_region = [{
-  "name": "pudongxinqu",
-  "cname": "浦东",
-  "num": 10
-}];*/
-var sh_region = [{
-  "name": "minhang",
-  "cname": "闵行",
-  "num": 76
-}, {
-  "name": "xuhui",
-  "cname": "徐汇",
-  "num": 100
-}, {
-  "name": "pudongxinqu",
-  "cname": "浦东",
-  "num": 100
-}, {
-  "name": "putuo",
-  "cname": "普陀",
-  "num": 52
-}, {
-  "name": "changning",
-  "cname": "长宁",
-  "num": 81
-}, {
-  "name": "jingan",
-  "cname": "静安",
-  "num": 64
-}, {
-  "name": "huangpu",
-  "cname": "黄浦",
-  "num": 100
-}, {
-  "name": "fengxian",
-  "cname": "奉贤",
-  "num": 26
-}, {
-  "name": "hongkou",
-  "cname": "虹口",
-  "num": 72
-}, {
-  "name": "zhabei",
-  "cname": "闸北",
-  "num": 53
-}, {
-  "name": "yangpu",
-  "cname": "杨浦",
-  "num": 71
-}, {
-  "name": "baoshan",
-  "cname": "宝山",
-  "num": 48
-}, {
-  "name": "songjiang",
-  "cname": "松江",
-  "num": 49
-}, {
-  "name": "jiading",
-  "cname": "嘉定",
-  "num": 49
-}, {
-  "name": "qingpu",
-  "cname": "青浦",
-  "num": 33
-}, {
-  "name": "jinshan",
-  "cname": "金山",
-  "num": 20
-}, {
-  "name": "chongming",
-  "cname": "崇明",
-  "num": 11
-}];
+var shRegions = [
+    {
+        "name": "pudongxinqu",
+        "cname": "浦东",
+    }, {
+        "name": "minhang",
+        "cname": "闵行",
+    }, {
+        "name": "baoshan",
+        "cname": "宝山",
+    }, {
+        "name": "xuhui",
+        "cname": "徐汇",
+    }, {
+        "name": "putuo",
+        "cname": "普陀",
+    }, {
+        "name": "yangpu",
+        "cname": "杨浦",
+    }, {
+        "name": "changning",
+        "cname": "长宁",
+    }, {
+        "name": "songjiang",
+        "cname": "松江",
+    }, {
+        "name": "jiading",
+        "cname": "嘉定",
+    }, {
+        "name": "jingan",
+        "cname": "静安",
+    }, {
+        "name": "huangpu",
+        "cname": "黄浦",
+    }, {
+        "name": "hongkou",
+        "cname": "虹口",
+    }, {
+        "name": "zhabei",
+        "cname": "闸北",
+    }, {
+        "name": "qingpu",
+        "cname": "青浦",
+    }, {
+        "name": "fengxian",
+        "cname": "奉贤",
+    }, {
+        "name": "jinshan",
+        "cname": "金山",
+    }, {
+        "name": "chongming",
+        "cname": "崇明",
+    }];
 
 const sh_zones_url = "http://sh.lianjia.com/xiaoqu";
 
@@ -115,20 +95,24 @@ exports.searchZones = function*() {
 }
 
 exports.crawler = function*() {
-  yield getZoneList();
+  co.wrap(getZoneList)();
   this.body = {
     state: 0
   }
 }
 
 function* getZoneList() {
-  let page = 1;
-  const size = sh_region.length;
+  const size = shRegions.length;
   for (let i = 0; i < size; i++) {
-    const region = sh_region[i].name;
+    const region = shRegions[i].name;
     console.log("开始遍历-----" + region);
+    const regionPageUrl = sh_zones_url + "/" + region;
+    const pageResponse = yield request({
+      url: regionPageUrl
+    });
+    const pageNum = getTotalPage(pageResponse.body);
 
-    for (let j = 1; j <= sh_region[i].num; j++) {
+    for (let j = 1; j <= pageNum; j++) {
 
       try {
         const regionUrl = sh_zones_url + "/" + region + "/d" + j;
@@ -152,9 +136,12 @@ function* getZoneList() {
             const houseForSale = getAmountForSale(zoneBody);
             const totalAmount = getTotalAmount(zoneBody);
 
-
             const zoneData = yield getZonePrice(zoneBody, zoneIDs[k])
-            const zone = new Zone({
+
+            //新增或更新
+            yield Zone.update({
+              cid: zoneIDs[k],
+            },{
               city: "shanghai",
               district: region,
               name: zoneInfo[1],
@@ -164,24 +151,35 @@ function* getZoneList() {
               amount: houseForSale,
               total: totalAmount[0],
               xqdata: zoneData
+            }, {
+              upsert: true
             });
-            yield zone.save();
 
             //延时一段时间，防止请求频率太快被服务器拒绝
             delayAPeriod(500);
           } catch (e) {
-            console.error(e);
+            console.error("error------"+e);
             delayAPeriod(delayTime);
             k--;
           }
         }
       } catch (e) {
-        console.error(e);
+        console.error("error------"+e);
         delayAPeriod(delayTime);
         j--;
       }
     }
   }
+}
+
+function getTotalPage(body) {
+  const reg = /gahref="results_totalpage".*?(\d+)/;
+  const rs = reg.exec(body);
+  let pageNum = 0;
+  if(rs){
+    pageNum = rs[1];
+  }
+  return pageNum;
 }
 
 function getZoneCID(body) {
@@ -236,10 +234,10 @@ function getZoneInfo(body) {
     if (rawXY) {
       rawXY = rawXY[0].slice(9);
       var comma1 = rawXY.indexOf(",");
-      var y = rawXY.slice(0, comma1);
+      var x = rawXY.slice(0, comma1);
       rawXY = rawXY.slice(comma1 + 2);
       var comma2 = rawXY.indexOf(",");
-      var x = rawXY.slice(0, comma2);
+      var y = rawXY.slice(0, comma2);
       var pos = [x, y];
       data = [pos, name];
     } else {
