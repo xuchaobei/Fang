@@ -1,6 +1,6 @@
 ## 简介
 
-用React + BaiduMap + Echart + Webpack + Koa, 实现的上海各小区房价一览表。
+用React + BaiduMap + Echart + Webpack + Koa ， 实现的上海各小区房价一览表。
 
 Node.js 和 Python 两种方式实现数据抓取爬虫。
 
