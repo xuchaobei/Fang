@@ -91,9 +91,9 @@ export default class Map extends Component {
 			success: function(data) {
 				that.makeLabel(data.zones);
 
-				// 倒序
+				// 按年增长率倒序
 				data.zones.sort(function(a, b) {
-					return b.priceRate - a.priceRate;
+					return b.xqdata.ratio_year - a.xqdata.ratio_year;
 				}); 
 				that.onRefreshZones(data.zones);
 			}
