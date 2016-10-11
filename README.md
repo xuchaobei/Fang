@@ -1,61 +1,27 @@
-![screenshot](https://i.imgur.com/JgBEIMm.png?1)
+## 简介
 
-# React Isomorphic Starterkit
+用React + BaiduMap + Echart + Webpack + Koa, 实现的上海各小区房价一览表。
 
-Isomorphic starterkit with server-side React rendering using 
-[npm](https://www.npmjs.com),
-[koa](http://koajs.com),
-[webpack](https://webpack.github.io/), 
-[babel](http://babeljs.io),
-[react](https://facebook.github.io/react),
-[react-router](https://github.com/rackt/react-router), 
-[react-transform-hmr](https://github.com/gaearon/react-transform-hmr), 
-[react-transmit](https://github.com/RickWong/react-transmit),
-[react-inline-css](https://github.com/RickWong/react-inline-css)
+Node.js 和 Python 两种方式实现数据抓取爬虫。
 
-![version](https://img.shields.io/npm/v/react-isomorphic-starterkit.svg) ![license](https://img.shields.io/npm/l/react-isomorphic-starterkit.svg) [![Package Quality](http://npm.packagequality.com/shield/react-isomorphic-starterkit.svg)](http://packagequality.com/#?package=react-isomorphic-starterkit) ![installs](https://img.shields.io/npm/dt/react-isomorphic-starterkit.svg) ![downloads](https://img.shields.io/github/downloads/RickWong/react-isomorphic-starterkit/latest/total.svg)
 
-## Features
+## 安装及运行
 
-- Fully automated toolchain with npm run scripts
-- React 0.14 + React Router 2.0 on the client and server
-- Babel 6 automatically compiles ES2015 + ES7 stage-0
-- Webpack HMR for instant server updates
-- React Transform HMR for instant client updates
-- React Transmit to preload on server and hydrate client
-- InlineCss-component for styling components
+1. 环境准备：Node.js、MongoDB、Python(可选)
+2. 进入项目根路径
+3. 执行 npm run build 安装项目依赖 
+4. 执行 npm run dev 或者 npm run start, 启动项目
+5. 浏览器访问localhost:8080
+6. 此时网页中是没有小区数据的，需要通过爬虫抓取小区房价信息。  </br>
+   提供了两种爬虫实现：  </br>
+   (1). 访问localhost:8080/crawler, 触发Node.js实现的爬虫  </br>
+   (2). 在项目根路径下，执行python crawler.py, 触发Python实现的爬虫
 
-It just works out-of-the-box.
+## 声明
 
-## Installation
-
-Development
-
-```bash
-git clone https://github.com/RickWong/react-isomorphic-starterkit.git
-cd react-isomorphic-starterkit
-	
-npm install
-npm run watch     # Yes, ONE command for both server AND client development!
-```
-
-Production
-
-```bash
-npm run build
-npm run start  
-```
-
-## Usage
-
-Run `npm run watch` in your terminal and play with `views/Main.js` to get a feel of
-the server-side rendering and client-side hot updates.
-
-## Community
-
-Let's start one together! After you ★Star this project, follow [@Rygu](https://twitter.com/rygu)
-on Twitter.
+爬虫抓取的数据来源于链家网，仅作为学习使用。
+参考项目: https://github.com/vvsuperman/fkEstate 。
 
 ## License
 
-BSD 3-Clause license. Copyright © 2015, Rick Wong. All rights reserved.
+MIT
