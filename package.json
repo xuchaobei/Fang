@@ -3,17 +3,6 @@
   "description": "fang",
   "version": "1.0.0",
   "license": "MIT",
-  "keywords": [
-    "react",
-    "isomorphic",
-    "universal",
-    "starter",
-    "boilerplate",
-    "template",
-    "webpack",
-    "koa",
-    "transmit"
-  ],
   "scripts": {
     "start": "npm run build && NODE_ENV=production babel-node ./backend/server.js",
     "dev": "NODE_ENV=development babel-node ./backend/server.js",
