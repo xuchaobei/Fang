@@ -1,45 +1,43 @@
-import React, {
-	Component,
-	PropTypes
-} from 'react';
-
-require("./header.less")
-
-var districts = ["徐汇", "静安", "浦东新区", "杨浦", "闵行", "普陀区", "长宁", "黄浦", "卢湾", "虹口", "闸北", "宝山", "松江", "嘉定", "青浦", "金山"];
-
+import React, { Component, PropTypes } from 'react';
+import './header.less';
 
 export default class Header extends Component {
+  constructor(props) {
+    super(props);
+    this.state = {
+      district: this.props.districtList[0],
+    };
+    this.changeDistrict = this.changeDistrict.bind(this);
+    this.search = this.search.bind(this);
+  }
 
-	constructor(props){
-		super(props);
-		this.state = {
-			district : districts[0]
-		};
-		this.changeDistrict = this.changeDistrict.bind(this);
-		this.search = this.search.bind(this);
-		this.onSearchDistrict = props.onSearchDistrict;
-	}
+  changeDistrict(event) {
+    this.setState({
+      district: event.target.value,
+    });
+  }
 
-	render() {
-		return (
-			<div className="header">
-				<label>选择区域</label>
-				<select onChange= {this.changeDistrict} >
-					{districts.map(district => (<option key={district} value={district}>{district}</option>))}				
-				</select>
-				<button onClick = {this.search}>查询</button>
-			</div>
-		);
-	}
+  search() {
+    this.props.onSearchDistrict(this.state.district);
+  }
 
-	changeDistrict(event) {
-		this.setState({
-			district : event.target.value
-		})
-	}
-
-	search() {
-		this.onSearchDistrict(this.state.district);
-	}
-
+  render() {
+    return (
+      <div className="header">
+        <span>选择区域</span>
+        <select value={this.state.value} onChange={this.changeDistrict}>
+          {this.props.districtList.map(district => (
+            <option key={district} value={district}>{district}</option>
+          ))}
+        </select>
+        <button onClick={this.search}>查询</button>
+      </div>
+    );
+  }
 }
+
+Header.propTypes = {
+  districtList: PropTypes.array,
+  onSearchDistrict: PropTypes.func,
+};
+

@@ -85,18 +85,18 @@ def crawler():
                         continue
                     print zoneInfo[1]
                     houseForSale = getAmountForSale(zoneResponse)
-                    totalAmount = getTotalAmount(zoneResponse)
+                    # totalAmount = getTotalAmount(zoneResponse)
                     zoneData = getZonePrice(zoneResponse, zoneID)
 
                     zone = {
                         "city": "shanghai",
                         "district": shRegions[i]["name"],
                         "name": zoneInfo[1],
-                        "cid": zoneID 	,
+                        "cid": zoneID,
                         "x": float(zoneInfo[0][0]),
                         "y": float(zoneInfo[0][1]),
                         "amount": houseForSale,
-                        "total": totalAmount,
+                        #"total": totalAmount,
                         "xqdata": zoneData
                     }
                     zoneDB = db.zone.find_one(
